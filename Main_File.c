@@ -56,6 +56,7 @@ void dep_interest_amount(void);
 void update_account(void);
 void count_acc(const Account *acc);
 void display_accounts(void);
+int compare_Names(const void *a, const void *b);
 
 /* ------- Helper functions ------- */
 
@@ -849,29 +850,39 @@ void close_account(void)
     printf("Account closed successfully!\n");
 }
 
-/* ------- Displaying total active accounts ------- */
+/* ------- Displaying total active accounts limit up to 100 accounts ------- */
 
 void display_accounts(void)
 {
     FILE *fp = fopen(TOTAL_ACC, "rb"); // File opened in read binary mode
-    Total_acc acc;
-    int count = 0;
-
     if (fp == NULL)
     {
         printf("No accounts found!\n");
         return;
     }
+    Total_acc acc,acc_list[100]; // Array to store up to 100 accounts
+    int count = 0;
+   while (fread(&acc_list[count], sizeof(acc), 1, fp))
+    {
+        count++;
+    }
+    if(count==0)
+    {
+        printf("No accounts found!\n");
+        fclose(fp);
+        return;
+    }
+
+    qsort(acc_list, count, sizeof(Total_acc), compare_Names);
 
     printf("\n%-34s %-19s %-19s\n",
            "Account Holder Name", "Account No.", "Mobile No.");
     printf("------------------------------------------------------------------\n");
 
-    while (fread(&acc, sizeof(acc), 1, fp) == 1)
+    for (int i = 0; i < count; i++)
     {
         printf("%-34s %-19s %-19s\n",
-               acc.name, acc.acc_no, acc.mobile_no);
-        count++;
+               acc_list[i].name, acc_list[i].acc_no, acc_list[i].mobile_no);
     }
 
     printf("------------------------------------------------------------------\n");
@@ -879,3 +890,10 @@ void display_accounts(void)
 
     fclose(fp);
 }
+
+ int compare_Names(const void *a, const void *b)
+ {
+    const Total_acc *accA = (const Total_acc *)a;
+    const Total_acc *accB = (const Total_acc *)b;
+    return strcmp(accA->name, accB->name);
+ }
